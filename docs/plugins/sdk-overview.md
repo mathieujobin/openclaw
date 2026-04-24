@@ -98,7 +98,8 @@ methods:
 | `api.registerCli(registrar, opts?)`             | CLI subcommand                          |
 | `api.registerService(service)`                  | Background service                      |
 | `api.registerInteractiveHandler(registration)`  | Interactive handler                     |
-| `api.registerEmbeddedExtensionFactory(factory)` | Pi embedded-runner extension factory    |
+| `api.registerAgentToolResultMiddleware(...)`    | Harness tool-result middleware          |
+| `api.registerEmbeddedExtensionFactory(factory)` | Legacy Pi extension factory             |
 | `api.registerMemoryPromptSupplement(builder)`   | Additive memory-adjacent prompt section |
 | `api.registerMemoryCorpusSupplement(adapter)`   | Additive memory search/read corpus      |
 
@@ -109,15 +110,22 @@ methods:
   plugin-owned methods.
 </Note>
 
-<Accordion title="When to use registerEmbeddedExtensionFactory">
-  Use `api.registerEmbeddedExtensionFactory(...)` when a plugin needs Pi-native
-  event timing during OpenClaw embedded runs — for example async `tool_result`
-  rewrites that must happen before the final tool-result message is emitted.
+<Accordion title="When to use tool-result middleware">
+  Use `api.registerAgentToolResultMiddleware(...)` when a plugin needs to
+  rewrite a tool result after execution and before the harness feeds that
+  result back into the model. This is the harness-neutral seam for async output
+  reducers such as tokenjuice.
 
-This is a bundled-plugin seam today: only bundled plugins may register one,
-and they must declare `contracts.embeddedExtensionFactories: ["pi"]` in
-`openclaw.plugin.json`. Keep normal OpenClaw plugin hooks for everything that
-does not require that lower-level seam.
+Plugins must declare `contracts.agentToolResultMiddleware` for each targeted
+harness, for example `["pi", "codex-app-server"]`. Keep normal OpenClaw
+plugin hooks for work that does not need pre-model tool-result timing.
+</Accordion>
+
+<Accordion title="Legacy Pi extension factories">
+  `api.registerEmbeddedExtensionFactory(...)` is a compatibility seam for
+  bundled plugins that still need direct PI embedded-runner events. New
+  tool-result transforms should use
+  `api.registerAgentToolResultMiddleware(...)` instead.
 </Accordion>
 
 ### Gateway discovery registration
